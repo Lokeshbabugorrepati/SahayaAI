@@ -5,7 +5,6 @@
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#007bff" />
-
     <title>SahayaAI – Multilingual Voice & Vision Assistant</title>
 
     <!-- ===================== -->
@@ -20,7 +19,7 @@
       content="Empowering Communities Through Language and AI. SahayaAI extracts text from images, translates it into Indian languages, and reads it aloud for better understanding."
     />
 
-    <!-- Open Graph / Facebook Preview -->
+    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://sahayaai.netlify.app/" />
     <meta
@@ -36,7 +35,7 @@
       content="https://github.com/user-attachments/assets/fee51690-97e4-4d1f-882b-595a2eede1c6"
     />
 
-    <!-- Twitter Preview -->
+    <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content="https://sahayaai.netlify.app/" />
     <meta
@@ -52,17 +51,26 @@
       content="https://github.com/user-attachments/assets/fee51690-97e4-4d1f-882b-595a2eede1c6"
     />
 
-    <!-- Fonts and Icons -->
+    <!-- Fonts -->
     <link
       href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap"
       rel="stylesheet"
     />
 
+    <!-- Basic Styling -->
     <style>
       body {
         margin: 0;
         background-color: #ffffff;
         font-family: "Orbitron", sans-serif;
+      }
+
+      /* Optional loading fallback */
+      .loading {
+        text-align: center;
+        margin-top: 20%;
+        font-size: 1.2rem;
+        color: #007bff;
       }
     </style>
   </head>
@@ -70,5 +78,18 @@
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
+
+    <!-- Optional fallback message -->
+    <div class="loading" id="loading">
+      Loading SahayaAI...
+    </div>
+
+    <script>
+      // Hide loading text once React loads
+      window.onload = function () {
+        const loader = document.getElementById("loading");
+        if (loader) loader.style.display = "none";
+      };
+    </script>
   </body>
 </html>
