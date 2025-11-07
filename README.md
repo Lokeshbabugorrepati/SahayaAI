@@ -1,3 +1,5 @@
+![SahayaAI Banner](https://github.com/user-attachments/assets/fee51690-97e4-4d1f-882b-595a2eede1c6)
+
 # SahayaAI  
 
 🌐 **Multilingual Voice & Vision Assistant for Local Language Access**
@@ -8,11 +10,11 @@ It extracts English text from images (like government forms or official notices)
 ---
 
 ## 🚀 Features
-- 🧠 OCR (Image to Text) — extracts text from images using AI (OCR.Space API)
-- 🌍 Translation — translates English to Telugu, Hindi, Tamil, Kannada, and other Indian languages
-- 🔊 Voice Output — speaks the translated text aloud using browser speech synthesis
-- 📸 Smart Image Enhancement — improves blurry or low-quality images for better OCR
-- 💻 Simple, elegant interface — mobile-friendly design with modern UI
+- 🧠 **OCR (Image to Text)** — extracts text from images using AI (OCR.Space API)
+- 🌍 **Translation** — translates English to Telugu, Hindi, Tamil, Kannada, and other Indian languages
+- 🔊 **Voice Output** — speaks the translated text aloud using browser speech synthesis
+- 📸 **Smart Image Enhancement** — improves blurry or low-quality images for better OCR
+- 💻 **Simple, elegant interface** — mobile-friendly design with modern UI
 
 ---
 
@@ -20,7 +22,7 @@ It extracts English text from images (like government forms or official notices)
 **Frontend:** React.js  
 **APIs Used:** OCR.Space (for text extraction), MyMemory (for translation)  
 **Languages:** JavaScript, HTML, CSS  
-**Hosting (upcoming):** Netlify  
+**Hosting:** Netlify  
 
 ---
 
