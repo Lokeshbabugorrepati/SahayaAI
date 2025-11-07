@@ -14,8 +14,6 @@ body {
   text-align: center;
   padding: 60px 20px 40px;
   color: white;
-  position: relative;
-  overflow: hidden;
 }
 
 .ai-glow {
@@ -45,7 +43,6 @@ body {
   flex-wrap: wrap;
 }
 
-/* Smooth buttons */
 .btn {
   border: none;
   border-radius: 10px;
@@ -54,11 +51,6 @@ body {
   padding: 10px 18px;
   font-size: 16px;
   transition: all 0.3s ease;
-}
-
-.btn.big {
-  font-size: 18px;
-  padding: 12px 22px;
 }
 
 .btn.primary {
@@ -77,14 +69,14 @@ body {
   box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
 }
 
-/* Container Layout */
+/* Main Container */
 .container {
   max-width: 1100px;
   margin: 20px auto;
   padding: 20px;
   display: grid;
   grid-template-columns: 1fr 420px;
-  gap: 18px;
+  gap: 22px;
 }
 
 @media (max-width: 980px) {
@@ -95,31 +87,30 @@ body {
 
 /* Card Styles */
 .card {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.96);
   border-radius: 14px;
-  padding: 18px;
+  padding: 20px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-  animation: fadeUp 0.6s ease forwards;
 }
 
-/* Compact Input Box */
+/* Text Input (Smaller box) */
 textarea {
   width: 100%;
-  height: 100px; /* reduced height */
+  height: 70px; /* smaller input box */
   border-radius: 8px;
   padding: 10px;
   border: 1px solid #dcdcdc;
   font-size: 15px;
   resize: none;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
 
+/* Upload Section */
 .file-row {
   display: flex;
-  gap: 10px;
-  margin-top: 5px;
   align-items: center;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-top: 5px;
 }
 
 .file-drop {
@@ -128,7 +119,7 @@ textarea {
   background: #f6f6f6;
   border: 2px dashed #ccc;
   border-radius: 10px;
-  padding: 12px;
+  padding: 14px;
   transition: 0.3s;
 }
 
@@ -137,9 +128,10 @@ textarea {
   border-color: #007bff;
 }
 
+/* Image preview */
 .preview {
-  width: 200px;
-  height: 110px;
+  width: 180px;
+  height: 100px;
   border-radius: 8px;
   background: #f9f9f9;
   display: flex;
@@ -147,96 +139,60 @@ textarea {
   justify-content: center;
   font-size: 13px;
   color: #666;
+  margin-left: 12px;
 }
 
-.preview img {
-  max-width: 100%;
-  max-height: 100%;
-  border-radius: 6px;
+/* Translate & Speak section */
+.card-right {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
-/* Progress Bar */
-.progress {
-  margin-top: 10px;
+.language-select {
+  margin-top: 5px;
+  margin-bottom: 8px;
 }
 
-.bar {
-  height: 8px;
+/* Button spacing fix */
+.action-buttons {
+  display: flex;
+  gap: 12px; /* gap between Translate & Speak */
+  margin-top: 8px;
+}
+
+.btn-action {
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 8px 18px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-translate {
   background: linear-gradient(90deg, #007bff, #6b39ff);
-  border-radius: 6px;
+  color: white;
 }
 
-/* Translated Output */
+.btn-speak {
+  background: #f0f0f0;
+  border: 1px solid #ccc;
+}
+
+.btn-action:hover {
+  transform: translateY(-2px);
+}
+
+/* Translated Text Box */
 .result-box {
   background: #f8f8f8;
   padding: 12px;
   border-radius: 10px;
   border: 1px solid #e5e7eb;
   min-height: 60px;
-}
-
-.muted {
-  color: #777;
-}
-
-/* Animations */
-.fade-in {
-  opacity: 0;
-  animation: fadeIn 1s ease forwards;
-}
-
-.slide-up {
-  opacity: 0;
-  transform: translateY(20px);
-  animation: slideUp 1s ease forwards;
-}
-
-.slide-left {
-  opacity: 0;
-  transform: translateX(-40px);
-  animation: slideLeft 1s ease forwards;
-}
-
-.slide-right {
-  opacity: 0;
-  transform: translateX(40px);
-  animation: slideRight 1s ease forwards;
-}
-
-@keyframes fadeIn {
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideUp {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideLeft {
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slideRight {
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes pulse {
-  0% {
-    text-shadow: 0 0 15px #6b39ff;
-  }
-  100% {
-    text-shadow: 0 0 25px #00aaff;
-  }
+  margin-top: 10px;
 }
 
 /* Footer */
@@ -248,13 +204,8 @@ textarea {
   font-size: 14px;
 }
 
-/* Error Message */
-.error {
-  background: #ffeaea;
-  color: #c00;
-  padding: 8px 12px;
-  border-radius: 8px;
-  margin-top: 10px;
-  font-size: 14px;
-  border: 1px solid #f5c2c2;
+/* Animations */
+@keyframes pulse {
+  0% { text-shadow: 0 0 15px #6b39ff; }
+  100% { text-shadow: 0 0 25px #00aaff; }
 }
