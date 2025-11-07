@@ -35,6 +35,7 @@ body {
   opacity: 0.9;
 }
 
+/* Buttons */
 .hero-buttons {
   margin-top: 30px;
   display: flex;
@@ -75,7 +76,7 @@ body {
   margin: 20px auto;
   padding: 20px;
   display: grid;
-  grid-template-columns: 1fr 400px;
+  grid-template-columns: 1fr 420px;
   gap: 24px;
 }
 
@@ -93,33 +94,35 @@ body {
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
 }
 
-/* Smaller text box */
+/* ✅ Smaller and narrower textbox */
 textarea {
-  width: 100%;
-  height: 55px; /* reduced height */
+  width: 90%; /* reduced width */
+  height: 60px;
   border-radius: 8px;
   padding: 8px 10px;
   border: 1px solid #dcdcdc;
   font-size: 15px;
   resize: none;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+  margin-left: 5%;
 }
 
-/* Upload section */
+/* ✅ Compact Upload Section */
 .file-row {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .file-drop {
-  width: 100%;
+  width: 90%;
   text-align: center;
-  background: #f6f6f6;
+  background: #f9f9f9;
   border: 2px dashed #ccc;
   border-radius: 10px;
-  padding: 15px;
+  padding: 10px;
   transition: 0.3s;
 }
 
@@ -128,28 +131,16 @@ textarea {
   border-color: #007bff;
 }
 
-.file-drop input {
-  display: none;
-}
-
-.file-drop label {
-  background: linear-gradient(90deg, #007bff, #6b39ff);
-  color: white;
-  padding: 8px 18px;
-  border-radius: 8px;
+/* ✅ Only one upload button (Choose File) */
+input[type="file"] {
+  display: block;
+  margin: 5px auto;
   cursor: pointer;
-  font-weight: 600;
-  transition: 0.3s;
 }
 
-.file-drop label:hover {
-  transform: scale(1.05);
-}
-
-/* Preview Box */
 .preview {
-  width: 100%;
-  height: 100px;
+  width: 90%;
+  height: 80px;
   border-radius: 8px;
   background: #fafafa;
   display: flex;
@@ -158,14 +149,14 @@ textarea {
   font-size: 13px;
   color: #666;
   border: 1px dashed #ddd;
-  margin-top: 5px;
+  margin-top: 6px;
 }
 
-/* Translate Section */
+/* ✅ Better Translate & Speak Spacing */
 .card-right {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 18px; /* added more breathing room */
 }
 
 .language-select {
@@ -174,7 +165,7 @@ textarea {
 
 .action-buttons {
   display: flex;
-  gap: 14px; /* more gap between buttons */
+  gap: 16px; /* more gap between buttons */
   margin-top: 6px;
 }
 
@@ -194,16 +185,12 @@ textarea {
 }
 
 .btn-translate:hover {
-  box-shadow: 0 0 12px #6b39ff;
+  box-shadow: 0 0 10px #6b39ff;
 }
 
 .btn-speak {
   background: #f2f2f2;
   border: 1px solid #ccc;
-}
-
-.btn-speak:hover {
-  background: #eaeaea;
 }
 
 .result-box {
@@ -212,7 +199,6 @@ textarea {
   border-radius: 10px;
   border: 1px solid #e5e7eb;
   min-height: 60px;
-  margin-top: 10px;
 }
 
 /* Footer */
