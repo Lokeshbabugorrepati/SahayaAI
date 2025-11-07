@@ -1,3 +1,4 @@
+/* src/App.css */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Orbitron:wght@700&display=swap');
 
 :root{
@@ -5,6 +6,7 @@
   --accent2: #6b39ff;
   --card: rgba(255,255,255,0.98);
   --muted: #777;
+  --glass: rgba(255,255,255,0.15);
 }
 
 *{box-sizing:border-box}
@@ -27,17 +29,17 @@ body {
 .hero-buttons{ margin-top:22px; display:flex; gap:14px; justify-content:center; flex-wrap:wrap;}
 .btn{ border:none; border-radius:10px; cursor:pointer; font-weight:600; padding:10px 16px; font-size:15px; transition:all .22s ease;}
 .btn.primary{ background:linear-gradient(90deg,var(--accent1),var(--accent2)); color:#fff; }
-.btn.glass{ background: rgba(255,255,255,0.15); color:#fff; border:1px solid rgba(255,255,255,0.18); }
+.btn.glass{ background: var(--glass); color:#fff; border:1px solid rgba(255,255,255,0.18); }
 .btn.big{ padding:12px 20px; font-size:16px; }
 
-/* container */
-.container{ max-width:1100px; margin:20px auto; padding:20px; display:grid; grid-template-columns:1fr 420px; gap:24px;}
+/* main layout */
+.container{ max-width:1100px; margin:20px auto; padding:20px; display:grid; grid-template-columns:1fr 420px; gap:24px; align-items:stretch; }
 @media (max-width:980px){ .container{ grid-template-columns:1fr; } }
 
-/* card base */
+/* card */
 .card{ background:var(--card); border-radius:14px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.10); display:flex; flex-direction:column; justify-content:flex-start; }
 
-/* --- LEFT: Input --- */
+/* left card */
 .left-card h2{ margin:0 0 12px 0; font-size:24px; }
 textarea{ width:100%; height:60px; border-radius:8px; padding:8px 10px; border:1px solid #e0e0e0; font-size:15px; resize:none; }
 
@@ -47,20 +49,20 @@ textarea{ width:100%; height:60px; border-radius:8px; padding:8px 10px; border:1
 .file-drop:hover{ border-color: var(--accent1); }
 .file-drop p{ margin:6px 0 10px 0; color:var(--muted); }
 
-/* FILE INPUT: visible Choose File + filename to the right */
+/* FILE INPUT: visible Choose File + filename next to it */
 .file-meta{ display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; }
 input[type="file"]{ display:inline-block; cursor:pointer; }
 .file-button{ background:linear-gradient(90deg,var(--accent1),var(--accent2)); color:white; padding:8px 12px; border-radius:8px; font-weight:700; cursor:pointer; }
 .filename{ color:var(--muted); font-size:14px; }
 
-/* preview box small and compact */
+/* preview box */
 .preview{ width:220px; height:90px; border-radius:8px; background:#fff; border:1px dashed #eee; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:13px; padding:8px; }
 
 /* progress */
 .progress{ margin-top:12px; }
 .bar{ height:8px; background:linear-gradient(90deg,var(--accent1),var(--accent2)); border-radius:8px; width:0; }
 
-/* --- RIGHT: Translate & Speak --- */
+/* right card */
 .card-right h2{ margin:0 0 12px 0; font-size:24px; }
 .language-select{ margin-bottom:12px; }
 select{ padding:6px 8px; border-radius:6px; border:1px solid #ddd; background:#fff; }
@@ -69,9 +71,10 @@ select{ padding:6px 8px; border-radius:6px; border:1px solid #ddd; background:#f
 .action-buttons{ display:flex; gap:14px; align-items:center; margin-bottom:12px; }
 .btn-action{ padding:8px 14px; border-radius:8px; font-weight:700; cursor:pointer; border:none; }
 .btn-translate{ background:linear-gradient(90deg,var(--accent1),var(--accent2)); color:#fff; }
+.btn-translate:hover{ box-shadow:0 0 10px var(--accent2); transform: translateY(-2px); }
 .btn-speak{ background:#f2f3f5; border:1px solid #e2e2e2; }
 
-/* space between buttons area and translated result */
+/* space between buttons and translated result */
 .result-gap{ height:10px; }
 
 /* result box */
@@ -83,6 +86,9 @@ select{ padding:6px 8px; border-radius:6px; border:1px solid #ddd; background:#f
 
 /* footer */
 .footer{ text-align:center; color:rgba(255,255,255,0.9); margin-top:30px; padding:8px 0; font-size:13px; }
+
+/* error box */
+.error{ margin-top:10px; background:#ffecec; color:#b00020; padding:10px 12px; border-radius:8px; border:1px solid #f2c7c7; }
 
 /* animations */
 @keyframes pulse{ 0%{ text-shadow:0 0 12px var(--accent2);} 100%{ text-shadow:0 0 22px #00aaff;} }

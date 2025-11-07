@@ -4,7 +4,8 @@ import axios from "axios";
 import Tesseract from "tesseract.js";
 import "./App.css";
 
-const OCR_SPACE_KEY = "K84934366888957"; // your OCR.Space key
+// <-- put your OCR.Space free/pro key here -->
+const OCR_SPACE_KEY = "K84934366888957";
 
 function App() {
   const [inputText, setInputText] = useState("");
@@ -22,27 +23,118 @@ function App() {
   const scrollToInput = () =>
     inputSectionRef.current?.scrollIntoView({ behavior: "smooth" });
 
-  // small enhancement to image before OCR
-  const enhanceImageBlob = async (file) =>
-    new Promise((resolve, reject) => {
+  /* -----------------------------
+     Enhanced image preprocessing
+     - grayscale + unsharp mask + contrast
+     - rescale for better OCR handling
+     ----------------------------- */
+  const enhanceImageBlob = async (file) => {
+    return new Promise((resolve, reject) => {
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.src = URL.createObjectURL(file);
+
       img.onload = () => {
+        // target max dimension to keep images manageable
         const maxDim = 1600;
         const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const w = Math.max(400, Math.round(img.width * scale));
+        const h = Math.max(200, Math.round(img.height * scale));
+
         const canvas = document.createElement("canvas");
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
+        canvas.width = w;
+        canvas.height = h;
         const ctx = canvas.getContext("2d");
-        ctx.filter = "contrast(150%) brightness(110%)";
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob((b) => resolve(b), "image/png", 0.9);
+
+        // draw original image (resized)
+        ctx.drawImage(img, 0, 0, w, h);
+
+        // get pixel data
+        let imageData = ctx.getImageData(0, 0, w, h);
+        let data = imageData.data;
+
+        // 1) convert to grayscale (luma)
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i],
+            g = data[i + 1],
+            b = data[i + 2];
+          const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+          data[i] = data[i + 1] = data[i + 2] = lum;
+        }
+
+        // 2) apply simple unsharp mask kernel (sharpen)
+        const copy = new Uint8ClampedArray(data);
+        const kernel = [
+          0, -1, 0,
+          -1, 5, -1,
+          0, -1, 0
+        ];
+        const wInner = w - 1, hInner = h - 1;
+        try {
+          for (let y = 1; y < hInner; y++) {
+            for (let x = 1; x < wInner; x++) {
+              let sum = 0;
+              let k = 0;
+              for (let ky = -1; ky <= 1; ky++) {
+                for (let kx = -1; kx <= 1; kx++, k++) {
+                  const px = x + kx;
+                  const py = y + ky;
+                  const pidx = (py * w + px) * 4;
+                  sum += copy[pidx] * kernel[k];
+                }
+              }
+              const idx = (y * w + x) * 4;
+              const v = Math.min(255, Math.max(0, Math.round(sum)));
+              data[idx] = data[idx + 1] = data[idx + 2] = v;
+              data[idx + 3] = 255;
+            }
+          }
+        } catch (e) {
+          // in case anything fails, ignore and keep the grayscale image
+          console.warn("sharpen kernel failed:", e);
+        }
+
+        // 3) increase contrast slightly and nudge brightness
+        const contrastFactor = 1.12;
+        const brightnessOffset = -6;
+        for (let i = 0; i < data.length; i += 4) {
+          let v = data[i];
+          v = (v - 128) * contrastFactor + 128 + brightnessOffset;
+          v = Math.round(Math.min(255, Math.max(0, v)));
+          data[i] = data[i + 1] = data[i + 2] = v;
+        }
+
+        // put processed data back
+        ctx.putImageData(imageData, 0, 0);
+
+        // try a second canvas pass with canvas2D filter (if supported)
+        try {
+          const c2 = document.createElement("canvas");
+          c2.width = w;
+          c2.height = h;
+          const ctx2 = c2.getContext("2d");
+          if ("filter" in ctx2) {
+            // small no-op blur + contrast may help in some browsers
+            ctx2.filter = "contrast(110%)";
+            ctx2.drawImage(canvas, 0, 0);
+            c2.toBlob((blob) => resolve(blob), "image/png", 0.95);
+            return;
+          }
+        } catch (e) {
+          // ignore
+        }
+
+        // fallback: output processed canvas
+        canvas.toBlob((blob) => resolve(blob), "image/png", 0.95);
       };
+
       img.onerror = (e) => reject(e);
     });
+  };
 
-  // OCR with OCR.Space, fallback to Tesseract
+  /* -----------------------------
+     OCR pipeline: try OCR.Space then fallback to Tesseract
+     ----------------------------- */
   const runOCR = async (file) => {
     setErrorMsg("");
     setIsExtracting(true);
@@ -80,7 +172,7 @@ function App() {
       setErrorMsg("OCR.Space error; trying local OCR fallback.");
     }
 
-    // fallback: Tesseract
+    // fallback: Tesseract.js
     try {
       setOcrProgress(5);
       const result = await Tesseract.recognize(file, "eng", {
@@ -102,13 +194,14 @@ function App() {
     }
   };
 
-  // file input change (only one file input in UI)
   const handleFileChange = (e) => {
     const f = e.target.files?.[0];
     if (f) runOCR(f);
   };
 
-  // translate via MyMemory
+  /* -----------------------------
+     Translation (MyMemory) + small heuristics
+     ----------------------------- */
   const translate = async () => {
     setErrorMsg("");
     const q = inputText.trim();
@@ -124,9 +217,11 @@ function App() {
         timeout: 30000,
       });
       let translated = res?.data?.responseData?.translatedText || "";
-      // minor phrase shortcuts for common phrases
+
+      // small shortcut for common phrase to improve demo quality
       const low = q.toLowerCase();
       if (low.includes("good morning") && lang === "te") translated = "శుభోదయం";
+
       setTranslatedText(translated);
     } catch (err) {
       console.error("Translate error:", err);
@@ -175,10 +270,7 @@ function App() {
             <button className="btn primary big" onClick={scrollToInput}>
               🚀 Get Started
             </button>
-            <button
-              className="btn glass big"
-              onClick={() => fileInputRef.current?.click()}
-            >
+            <button className="btn glass big" onClick={() => fileInputRef.current?.click()}>
               📷 Upload Image
             </button>
           </div>
@@ -254,7 +346,7 @@ function App() {
             </button>
           </div>
 
-          {/* add spacing before translated text */}
+          {/* spacing before translated text */}
           <div style={{ height: 10 }} />
 
           <div>
@@ -265,7 +357,15 @@ function App() {
 
             <div style={{ marginTop: 12, display: "flex", gap: 10 }}>
               <button className="btn small" onClick={copyTranslation}>Copy</button>
-              <button className="btn small" onClick={() => { const blob = new Blob([translatedText || ""], {type:'text/plain'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'translation.txt'; a.click(); URL.revokeObjectURL(url); }}>Download</button>
+              <button className="btn small" onClick={() => {
+                const blob = new Blob([translatedText || ""], { type: "text/plain" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "translation.txt";
+                a.click();
+                URL.revokeObjectURL(url);
+              }}>Download</button>
             </div>
           </div>
 
