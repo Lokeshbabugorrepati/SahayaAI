@@ -69,14 +69,14 @@ body {
   box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
 }
 
-/* Main Container */
+/* Layout */
 .container {
   max-width: 1100px;
   margin: 20px auto;
   padding: 20px;
   display: grid;
-  grid-template-columns: 1fr 420px;
-  gap: 22px;
+  grid-template-columns: 1fr 400px;
+  gap: 24px;
 }
 
 @media (max-width: 980px) {
@@ -85,41 +85,41 @@ body {
   }
 }
 
-/* Card Styles */
+/* Card */
 .card {
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(255, 255, 255, 0.97);
   border-radius: 14px;
   padding: 20px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
 }
 
-/* Text Input (Smaller box) */
+/* Smaller text box */
 textarea {
   width: 100%;
-  height: 70px; /* smaller input box */
+  height: 55px; /* reduced height */
   border-radius: 8px;
-  padding: 10px;
+  padding: 8px 10px;
   border: 1px solid #dcdcdc;
   font-size: 15px;
   resize: none;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
 }
 
-/* Upload Section */
+/* Upload section */
 .file-row {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  margin-top: 5px;
+  gap: 10px;
 }
 
 .file-drop {
-  flex: 1;
+  width: 100%;
   text-align: center;
   background: #f6f6f6;
   border: 2px dashed #ccc;
   border-radius: 10px;
-  padding: 14px;
+  padding: 15px;
   transition: 0.3s;
 }
 
@@ -128,37 +128,54 @@ textarea {
   border-color: #007bff;
 }
 
-/* Image preview */
+.file-drop input {
+  display: none;
+}
+
+.file-drop label {
+  background: linear-gradient(90deg, #007bff, #6b39ff);
+  color: white;
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.file-drop label:hover {
+  transform: scale(1.05);
+}
+
+/* Preview Box */
 .preview {
-  width: 180px;
+  width: 100%;
   height: 100px;
   border-radius: 8px;
-  background: #f9f9f9;
+  background: #fafafa;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 13px;
   color: #666;
-  margin-left: 12px;
+  border: 1px dashed #ddd;
+  margin-top: 5px;
 }
 
-/* Translate & Speak section */
+/* Translate Section */
 .card-right {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 14px;
 }
 
 .language-select {
   margin-top: 5px;
-  margin-bottom: 8px;
 }
 
-/* Button spacing fix */
 .action-buttons {
   display: flex;
-  gap: 12px; /* gap between Translate & Speak */
-  margin-top: 8px;
+  gap: 14px; /* more gap between buttons */
+  margin-top: 6px;
 }
 
 .btn-action {
@@ -176,16 +193,19 @@ textarea {
   color: white;
 }
 
+.btn-translate:hover {
+  box-shadow: 0 0 12px #6b39ff;
+}
+
 .btn-speak {
-  background: #f0f0f0;
+  background: #f2f2f2;
   border: 1px solid #ccc;
 }
 
-.btn-action:hover {
-  transform: translateY(-2px);
+.btn-speak:hover {
+  background: #eaeaea;
 }
 
-/* Translated Text Box */
 .result-box {
   background: #f8f8f8;
   padding: 12px;
@@ -204,7 +224,7 @@ textarea {
   font-size: 14px;
 }
 
-/* Animations */
+/* Animation */
 @keyframes pulse {
   0% { text-shadow: 0 0 15px #6b39ff; }
   100% { text-shadow: 0 0 25px #00aaff; }
