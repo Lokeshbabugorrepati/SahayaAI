@@ -1,128 +1,179 @@
-import React, { useState } from "react";
+// src/App.js
+import React, { useState, useRef } from "react";
 import axios from "axios";
+import Tesseract from "tesseract.js";
+import "./App.css";
+
+const OCR_SPACE_KEY = "K84934366888957"; // ← your OCR.Space API key
 
 function App() {
   const [inputText, setInputText] = useState("");
   const [translatedText, setTranslatedText] = useState("");
-  const [targetLang, setTargetLang] = useState("te");
-  const [isExtracting, setIsExtracting] = useState(false);
+  const [lang, setLang] = useState("te"); // default Telugu
   const [ocrProgress, setOcrProgress] = useState(0);
+  const [isExtracting, setIsExtracting] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [errorMsg, setErrorMsg] = useState("");
+  const fileInputRef = useRef();
 
-  // 📸 Smart Image Enhancement + OCR.Space Integration
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setIsExtracting(true);
-    setOcrProgress(0);
-    setInputText("");
-
-    try {
-      // 🧠 Step 1: Enhance Image Before OCR
+  // ----- Image preprocessing (canvas) -----
+  const enhanceImageBlob = async (file) => {
+    return await new Promise((resolve, reject) => {
       const img = new Image();
+      img.crossOrigin = "anonymous";
       img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        const maxDim = 2000; // avoid extremely large canvases
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext("2d");
 
-      await new Promise((resolve) => (img.onload = resolve));
+        // Apply filters and draw
+        ctx.filter = "contrast(180%) brightness(120%) saturate(110%)";
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      canvas.width = img.width;
-      canvas.height = img.height;
+        // convert to grayscale to help OCR
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i], g = data[i + 1], b = data[i + 2];
+          const avg = 0.299 * r + 0.587 * g + 0.114 * b;
+          // increase contrast for darker pixels a bit
+          data[i] = data[i + 1] = data[i + 2] = avg;
+        }
+        ctx.putImageData(imageData, 0, 0);
 
-      // Enhance contrast and brightness
-      ctx.filter = "contrast(200%) brightness(130%)";
-      ctx.drawImage(img, 0, 0);
-
-      // Convert to grayscale
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
-      for (let i = 0; i < data.length; i += 4) {
-        const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-        data[i] = data[i + 1] = data[i + 2] = avg;
-      }
-      ctx.putImageData(imageData, 0, 0);
-
-      // Convert enhanced image to Blob
-      const enhancedBlob = await new Promise((resolve) =>
-        canvas.toBlob(resolve, "image/png")
-      );
-
-      // 🛰 Step 2: Send Enhanced Image to OCR.Space API
-      const formData = new FormData();
-      formData.append("file", enhancedBlob, "enhanced.png");
-      formData.append("language", "eng");
-      formData.append("isOverlayRequired", false);
-
-      const res = await axios.post("https://api.ocr.space/parse/image", formData, {
-        headers: {
-          apikey: "K84934366888957", // ✅ Your OCR.Space API key
-          "Content-Type": "multipart/form-data",
-        },
-        onUploadProgress: (p) =>
-          setOcrProgress(Math.round((p.loaded / p.total) * 100)),
-      });
-
-      const parsed = res.data.ParsedResults?.[0]?.ParsedText || "";
-      const cleanText = parsed.replace(/\s+/g, " ").trim();
-
-      if (cleanText) {
-        setInputText(cleanText);
-      } else {
-        alert("No readable text found. Try a clearer photo.");
-      }
-    } catch (err) {
-      console.error("OCR Error:", err);
-      alert("OCR processing failed. Please retry.");
-    }
-
-    setIsExtracting(false);
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error("Canvas toBlob failed"));
+        }, "image/png", 0.95);
+      };
+      img.onerror = (e) => reject(e);
+    });
   };
 
-  // 🌐 Translate using MyMemory API
-  const translateText = async () => {
-    if (!inputText.trim()) {
-      alert("Please enter or extract text first!");
-      return;
-    }
-
-    setIsTranslating(true);
+  // ----- OCR via OCR.Space with fallback to Tesseract.js -----
+  const runOCR = async (file) => {
+    setErrorMsg("");
+    setIsExtracting(true);
+    setOcrProgress(1);
 
     try {
+      // enhance
+      const enhancedBlob = await enhanceImageBlob(file);
+      setImagePreview(URL.createObjectURL(enhancedBlob));
+
+      // form data to OCR.Space
+      const form = new FormData();
+      form.append("file", enhancedBlob, "enhanced.png");
+      form.append("language", "eng");
+      form.append("isOverlayRequired", false);
+
+      const res = await axios.post("https://api.ocr.space/parse/image", form, {
+        headers: { apikey: OCR_SPACE_KEY },
+        onUploadProgress: (p) => {
+          if (p.total) setOcrProgress(Math.round((p.loaded / p.total) * 100));
+        },
+        timeout: 120000,
+      });
+
+      const parsed =
+        res?.data?.ParsedResults && res.data.ParsedResults[0]
+          ? res.data.ParsedResults[0].ParsedText
+          : "";
+
+      if (parsed && parsed.trim().length > 0) {
+        setInputText(parsed.replace(/\s+/g, " ").trim());
+        setIsExtracting(false);
+        setOcrProgress(100);
+        return;
+      } else {
+        // fallback
+        setErrorMsg("OCR.Space returned empty result — using local OCR fallback.");
+      }
+    } catch (err) {
+      // network or API error, fallback
+      console.warn("OCR.Space error:", err);
+      setErrorMsg("OCR.Space error — using local OCR fallback.");
+    }
+
+    // ----- Local fallback using Tesseract -----
+    try {
+      setOcrProgress(5);
+      const workerResult = await Tesseract.recognize(file, "eng", {
+        logger: (m) => {
+          if (m.status === "recognizing text") {
+            setOcrProgress(Math.round(m.progress * 100));
+          }
+        },
+      });
+      const text = (workerResult?.data?.text || "").replace(/\s+/g, " ").trim();
+      setInputText(text);
+      if (!text) setErrorMsg("Local OCR could not extract text. Try a clearer image.");
+    } catch (err) {
+      console.error("Tesseract error:", err);
+      setErrorMsg("Both OCR.Space and local OCR failed.");
+    } finally {
+      setIsExtracting(false);
+      setOcrProgress(100);
+    }
+  };
+
+  // ----- Drag & Drop -----
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const f = e.dataTransfer.files?.[0];
+    if (f) runOCR(f);
+  };
+  const handleDragOver = (e) => e.preventDefault();
+
+  // ----- File input -----
+  const handleFileChange = (e) => {
+    const f = e.target.files?.[0];
+    if (f) runOCR(f);
+  };
+
+  // ----- Translate (MyMemory free API) -----
+  const translate = async () => {
+    setErrorMsg("");
+    const q = inputText.trim();
+    if (!q) {
+      setErrorMsg("Please enter or extract text first.");
+      return;
+    }
+    setIsTranslating(true);
+    setTranslatedText("");
+    try {
       const res = await axios.get("https://api.mymemory.translated.net/get", {
-        params: { q: inputText, langpair: `en|${targetLang}` },
+        params: { q, langpair: `en|${lang}` },
+        timeout: 30000,
       });
-
-      let translated = res.data.responseData.translatedText;
-
-      // 🧠 Smart Context Corrections
-      const corrections = [
-        { en: "good morning", te: "శుభోదయం" },
-        { en: "good night", te: "శుభరాత్రి" },
-        { en: "thank you", te: "ధన్యవాదాలు" },
-        { en: "government", te: "ప్రభుత్వం" },
-        { en: "health scheme", te: "ఆరోగ్య పథకం" },
-        { en: "application form", te: "దరఖాస్తు ఫారమ్" },
-      ];
-      const lower = inputText.toLowerCase();
-      corrections.forEach((pair) => {
-        if (lower.includes(pair.en)) translated = pair[targetLang] || translated;
-      });
+      let translated = res?.data?.responseData?.translatedText || "";
+      // some smart short mapping for common phrases (improve accuracy)
+      const low = q.toLowerCase();
+      if (low.includes("good morning")) translated = lang === "te" ? "శుభోదయం" : translated;
+      if (low.includes("thank you")) translated = lang === "te" ? "ధన్యవాదాలు" : translated;
 
       setTranslatedText(translated);
     } catch (err) {
-      console.error("Translation Error:", err);
-      alert("Translation failed. Please check your connection.");
+      console.error("Translation error:", err);
+      setErrorMsg("Translation failed. Check connection or try again.");
+    } finally {
+      setIsTranslating(false);
     }
-
-    setIsTranslating(false);
   };
 
-  // 🔊 Text-to-Speech
-  const speakText = () => {
-    if (!translatedText) return alert("Translate something first!");
+  // ----- Speech -----
+  const speak = () => {
+    if (!translatedText) {
+      setErrorMsg("Please translate text first.");
+      return;
+    }
     const utter = new SpeechSynthesisUtterance(translatedText);
-    const langMap = {
+    const map = {
       te: "te-IN",
       hi: "hi-IN",
       ta: "ta-IN",
@@ -132,125 +183,144 @@ function App() {
       mr: "mr-IN",
       gu: "gu-IN",
       pa: "pa-IN",
+      en: "en-IN",
     };
-    utter.lang = langMap[targetLang] || "en-IN";
+    utter.lang = map[lang] || "en-IN";
+    window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utter);
   };
 
+  // ----- Utility: copy/download -----
+  const copyTranslation = async () => {
+    if (!translatedText) return;
+    await navigator.clipboard.writeText(translatedText);
+    alert("Copied translated text to clipboard.");
+  };
+  const downloadTranslation = () => {
+    if (!translatedText) return;
+    const blob = new Blob([translatedText], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "sahayaai-translation.txt";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
-    <div
-      style={{
-        padding: "2rem",
-        fontFamily: "Poppins, sans-serif",
-        textAlign: "center",
-        background: "#f8f9fa",
-        minHeight: "100vh",
-      }}
-    >
-      <h1 style={{ color: "#007bff" }}>🌐 SahayaAI</h1>
-      <h3>Accurate OCR + Translation + Voice Assistant</h3>
-
-      <textarea
-        rows="5"
-        cols="60"
-        placeholder="Enter English text or upload an image..."
-        value={inputText}
-        onChange={(e) => setInputText(e.target.value)}
-        style={{
-          marginTop: "20px",
-          padding: "10px",
-          fontSize: "16px",
-          borderRadius: "8px",
-          border: "1px solid gray",
-          resize: "none",
-          width: "80%",
-          maxWidth: "600px",
-        }}
-      />
-
-      <div style={{ marginTop: "15px" }}>
-        <input type="file" accept="image/*" onChange={handleImageUpload} />
-      </div>
-
-      {isExtracting && (
-        <p style={{ color: "#ff6600", marginTop: "10px" }}>
-          Extracting text... {ocrProgress}% ⏳
-        </p>
-      )}
-
-      <div style={{ marginTop: "15px" }}>
-        <label>Choose Language: </label>
-        <select
-          value={targetLang}
-          onChange={(e) => setTargetLang(e.target.value)}
-          style={{
-            padding: "8px",
-            borderRadius: "5px",
-            margin: "10px",
-            fontSize: "16px",
-          }}
-        >
-          <option value="te">Telugu</option>
-          <option value="hi">Hindi</option>
-          <option value="ta">Tamil</option>
-          <option value="kn">Kannada</option>
-          <option value="ml">Malayalam</option>
-          <option value="bn">Bengali</option>
-          <option value="mr">Marathi</option>
-          <option value="gu">Gujarati</option>
-          <option value="pa">Punjabi</option>
-        </select>
-      </div>
-
-      <div>
-        <button
-          onClick={translateText}
-          disabled={isTranslating}
-          style={{
-            marginTop: "15px",
-            padding: "10px 20px",
-            fontSize: "16px",
-            background: "#28a745",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-          }}
-        >
-          {isTranslating ? "Translating..." : "Translate"}
-        </button>
-
-        <button
-          onClick={speakText}
-          style={{
-            marginLeft: "15px",
-            padding: "10px 20px",
-            fontSize: "16px",
-            background: "#007bff",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-          }}
-        >
-          🔊 Speak
-        </button>
-      </div>
-
-      <div style={{ marginTop: "30px" }}>
-        <h3>📝 Translated Text:</h3>
-        <div
-          style={{
-            background: "white",
-            padding: "15px",
-            borderRadius: "8px",
-            fontSize: "18px",
-            width: "80%",
-            margin: "auto",
-            boxShadow: "0 0 10px rgba(0,0,0,0.1)",
-          }}
-        >
-          {translatedText || "Translation will appear here..."}
+    <div className="app-gradient">
+      <header className="hero">
+        <div className="hero-inner">
+          <div className="logo-row">
+            <img
+              src="https://raw.githubusercontent.com/Lokeshbabugorrepati/SahayaAI/main/assets/logo-small.png"
+              alt="SahayaAI"
+              className="logo"
+              onError={(e)=>{e.target.style.display='none';}}
+            />
+            <h1>SahayaAI</h1>
+          </div>
+          <p className="tag">Empowering Communities Through Language and AI</p>
         </div>
-      </div>
+      </header>
+
+      <main className="container">
+        <section
+          className="card upload-card"
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+        >
+          <h2>Input</h2>
+
+          <div className="uploader">
+            <textarea
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              placeholder="Type English text here or upload an image below to extract text..."
+              rows={6}
+            />
+
+            <div className="file-row">
+              <div className="file-drop">
+                <p>Drag & drop an image here, or</p>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  ref={fileInputRef}
+                />
+                <button
+                  className="btn"
+                  onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                >
+                  Choose Image
+                </button>
+              </div>
+
+              <div className="preview">
+                {imagePreview ? (
+                  <img src={imagePreview} alt="preview" />
+                ) : (
+                  <div className="preview-empty">Image preview will appear here</div>
+                )}
+              </div>
+            </div>
+
+            {isExtracting && (
+              <div className="progress">
+                <div className="bar" style={{ width: `${ocrProgress}%` }} />
+                <small>Extracting text... {ocrProgress}%</small>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="card output-card">
+          <h2>Translate & Speak</h2>
+
+          <div className="controls">
+            <label>Choose Language</label>
+            <select value={lang} onChange={(e) => setLang(e.target.value)}>
+              <option value="te">Telugu</option>
+              <option value="hi">Hindi</option>
+              <option value="ta">Tamil</option>
+              <option value="kn">Kannada</option>
+              <option value="ml">Malayalam</option>
+              <option value="bn">Bengali</option>
+              <option value="mr">Marathi</option>
+              <option value="gu">Gujarati</option>
+              <option value="pa">Punjabi</option>
+            </select>
+
+            <div className="action-row">
+              <button className="btn primary" onClick={translate} disabled={isTranslating}>
+                {isTranslating ? "Translating..." : "Translate"}
+              </button>
+              <button className="btn" onClick={speak}>
+                🔊 Speak
+              </button>
+            </div>
+          </div>
+
+          <div className="result">
+            <h3>Translated Text</h3>
+            <div className="result-box">
+              {translatedText || <span className="muted">Translation will appear here...</span>}
+            </div>
+
+            <div className="result-actions">
+              <button className="btn" onClick={copyTranslation}>Copy</button>
+              <button className="btn" onClick={downloadTranslation}>Download</button>
+            </div>
+          </div>
+
+          {errorMsg && <div className="error">{errorMsg}</div>}
+        </section>
+      </main>
+
+      <footer className="footer">
+        <small>Developed by Lokesh Babu Gorrepati • SahayaAI</small>
+      </footer>
     </div>
   );
 }
